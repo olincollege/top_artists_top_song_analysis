@@ -9,7 +9,12 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import api_keys
 
-def get_artist_top_songs(artist_name, sp):
+client_credentials_manager = SpotifyClientCredentials(
+                                client_id=api_keys.CLIENT_ID,
+                                client_secret=api_keys.CLIENT_SECRET)
+sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+
+def get_artist_top_songs(artist, sp):
     """
     Finds the Spotify ID of the top ten artists by active listeners and
     gathers information of every artists' top ten most popular songs with the
@@ -28,9 +33,9 @@ def get_artist_top_songs(artist_name, sp):
     all_tracks_info = []
 
     #search for artist
-    results = sp.search(q='artist:' + artist_name, type='artist')
+    results = sp.search(q='artist:' + artist, type='artist')
     if len(results['artists']['items']) == 0:
-        print(f"No artist found with the name '{artist_name}'.")
+        print(f"No artist found with the name '{artist}'.")
         return
 
     #get artist ID
@@ -43,7 +48,7 @@ def get_artist_top_songs(artist_name, sp):
     #extract information
     for track in top_tracks['tracks']:
         track_info = {
-            'artist_name': artist_name,
+            'artist_name': artist,
             'name': track['name'],
             'track_id': track['id'],
             'popularity': track['popularity'],
@@ -75,7 +80,7 @@ def get_track_features(track_id, sp):
 
     return features[0]
 
-def find_average(list):
+def find_average(data_list):
     """
     Finds the average or mode of a list. 
     
@@ -90,13 +95,13 @@ def find_average(list):
         mode if the list's elements are strings.
 
     """
-    if len(list) > 0:
+    if len(data_list) > 0:
         if isinstance(list[0], (float, int)): # using mean
             return sum(list) / len(list)
         if isinstance(list[0], str): # using mode
-            counts = {value:0 for value in list}
+            counts = {value:0 for value in data_list}
 
-            for value in list:
+            for value in data_list:
                 counts[value] += 1
 
             max_value = max(counts.values())
@@ -114,7 +119,7 @@ features_to_include = [
     "valence"
 ]
 
-def get_artist_average_features(top_songs, sp):
+def get_artist_average_features(ten_songs, sp):
     """
     Retrieve and compute the average audio features for an artist's top songs.
 
@@ -138,7 +143,7 @@ def get_artist_average_features(top_songs, sp):
         represent the artist's respective average values of their top songs.
     """
     artist_song_features = {}
-    for song in top_songs:
+    for song in ten_songs:
         time.sleep(5)
         song_features = get_track_features(song["track_id"], sp)
         for key, value in song_features.items():
@@ -157,6 +162,7 @@ def get_artist_average_features(top_songs, sp):
         k:find_average(v) for k, v in artist_song_features.items()
     }
     return average_features
+
 
 def write_data_to_csv(artists_features, file_name, keys=features_to_include):
     """
@@ -203,11 +209,6 @@ def write_data_to_csv(artists_features, file_name, keys=features_to_include):
         dict_writer.writerows(data)
 
 if __name__ == "__main__":
-    client_credentials_manager = SpotifyClientCredentials(
-                                    client_id=api_keys.CLIENT_ID,
-                                    client_secret=api_keys.CLIENT_SECRET)
-    sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-
     artist_names = ['The Weeknd', 'Taylor Swift', 'Ariana Grande', 'Rihanna',
                     'Drake', 'Kanye West', 'Justin Bieber', 'Dua Lipa', 
                     'Coldplay', 'Bruno Mars']
@@ -223,3 +224,4 @@ if __name__ == "__main__":
 
     write_data_to_csv(artists_features, "artists_average.csv")
     write_data_to_csv(artists_songs, "artists_songs.csv")
+    
