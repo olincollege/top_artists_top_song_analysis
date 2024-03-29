@@ -158,3 +158,68 @@ def get_artist_average_features(top_songs, sp):
     }
     return average_features
 
+def write_data_to_csv(artists_features, file_name, keys=features_to_include):
+    """
+    Write artist features to a CSV file.
+
+    This function takes a dictionary of artist features generated from 
+    get_artist_average_features(). It writes this data to a CSV file.
+
+    The function excludes certain keys ("type", "id", "uri", "track_href", 
+    "analysis_url") from the data that are not applicable for analysis before 
+    writing to the CSV file.
+    
+    Each row in the CSV file represents an artist, and columns corresponds 
+    to their feature values.
+
+    Args:
+        artists_features: a dictionary where the keys are artist names and the 
+            values are dictionaries containing feature information. The nested 
+            dictionary contains the feature name as a key, and the data as a 
+            value.
+            
+        file_name: the name of the CSV file to write the data to.
+
+    Returns:
+        None.
+    """
+    exclude = ["type", "id", "uri", "track_href", "analysis_url"]
+
+    data = {
+        artist_name: {
+            k:v for k, v in features.items() if k not in exclude
+        } for artist_name, features in artists_features.items()
+    }
+
+    data = [{
+        "artist_name": artist_name,
+        **features
+    } for artist_name, features in data.items()]
+
+
+    with open(file_name, 'w+', newline='', encoding="utf-8") as file:
+        dict_writer = csv.DictWriter(file, keys + ["artist_name"])
+        dict_writer.writeheader()
+        dict_writer.writerows(data)
+
+if __name__ == "__main__":
+    client_credentials_manager = SpotifyClientCredentials(
+                                    client_id=api_keys.CLIENT_ID,
+                                    client_secret=api_keys.CLIENT_SECRET)
+    sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+
+    artist_names = ['The Weeknd', 'Taylor Swift', 'Ariana Grande', 'Rihanna',
+                    'Drake', 'Kanye West', 'Justin Bieber', 'Dua Lipa', 
+                    'Coldplay', 'Bruno Mars']
+
+    artists_features = {}
+    artists_songs = []
+
+    for artist_name in artist_names:
+        top_songs = get_artist_top_songs(artist_name, sp)
+        artists_songs.extend(top_songs)
+        artists_features[artist_name] = get_artist_average_features(
+                                                                top_songs, sp)
+
+    write_data_to_csv(artists_features, "artists_average.csv")
+    write_data_to_csv(artists_songs, "artists_songs.csv")
