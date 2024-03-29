@@ -24,7 +24,7 @@ def test_multiple_features():
     assert os.path.isfile("test_multiple_features.csv")
     os.remove("test_multiple_features.csv")
 
-def test_multiple_artists_and_features:
+def test_multiple_artists_and_features():
     write_data_to_csv({
         "a": {
             "loudness": 1,
